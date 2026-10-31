@@ -1,0 +1,9 @@
+node_modules/
+.openai/*credential*
+
+.env
+.env.*
+!.env.example
+.vercel/
+*.pem
+*.key
