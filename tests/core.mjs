@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {Chess,SAMPLE,parseGame,classify,lineSAN} from '../dist/analysis.js';
+import {detectSide} from '../dist/preferences.js';
+let checks=0;function test(name,fn){fn();checks++;console.log('PASS',name);}
+const game=parseGame(SAMPLE),w=game.moves[0],b=game.moves[1];
+const cp=v=>({type:'cp',value:v,pv:[]}),mate=v=>({type:'mate',value:v,pv:[]});
+test('valid PGN and delivered mate',()=>{assert.equal(game.moves.length,7);assert.equal(classify(game.moves[6],null,null).title,'Delivered checkmate');});
+test('invalid / empty / multiple games rejected',()=>{for(const p of ['', '1. e5', SAMPLE+'\n'+SAMPLE])assert.throws(()=>parseGame(p));});
+test('comments and variations',()=>assert.equal(parseGame('1. e4 {hi} e5 (1... c5) 2. Nf3 Nc6 *').moves.length,4));
+test('castling',()=>assert.equal(parseGame('1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. O-O *').moves.at(-1).san,'O-O'));
+test('FEN promotion',()=>assert.equal(parseGame('[SetUp "1"]\n[FEN "7k/P7/8/8/8/8/8/7K w - - 0 1"]\n\n1. a8=Q+ *').moves[0].promotion,'q'));
+test('en passant',()=>assert.equal(parseGame('1. e4 a6 2. e5 d5 3. exd6 *').moves.at(-1).flags,'e'));
+test('white and black loss normalization',()=>{assert.equal(classify(w,cp(0),cp(-350)).kind,'blunder');assert.equal(classify(b,cp(0),cp(350)).kind,'blunder');});
+test('negative loss clamps to zero',()=>assert.equal(classify(w,cp(0),cp(200)).loss,0));
+test('missed mate',()=>{assert.equal(classify(w,mate(3),cp(400)).kind,'mate');assert.equal(classify(b,mate(-3),cp(-400)).kind,'mate');});
+test('preserved mate is not missed',()=>assert.notEqual(classify(w,mate(2),mate(5)).kind,'mate'));
+test('allowed mate and already losing',()=>{assert.equal(classify(w,cp(0),mate(-3)).title,'Allowed a forced mate');assert.notEqual(classify(w,mate(-3),mate(-2)).title,'Allowed a forced mate');});
+test('legal PV conversion',()=>assert.deepEqual(lineSAN(game.fens[0],['e2e4','e7e5','invalid']),['e4','e5']));
+test('player identity matches either color, ignoring case and whitespace',()=>{assert.equal(detectSide({White:' AZG901 ',Black:'Other'},'azg901'),'w');assert.equal(detectSide({White:'Other',Black:'azg901'},'AZG901'),'b');});
+test('unmatched, empty and ambiguous identities do not guess a side',()=>{assert.equal(detectSide({White:'Other',Black:'Someone'},'azg901'),null);assert.equal(detectSide({White:'azg901',Black:'azg901'},'azg901'),null);assert.equal(detectSide({},''),null);});
+console.log(`${checks} tests passed`);

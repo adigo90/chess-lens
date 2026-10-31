@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {Chess,parseGame,SAMPLE} from '../dist/analysis.js';
+import {selectMoments,continuation,coachMoment,takeawayFor} from '../dist/review.js';
+const game=parseGame(SAMPLE);
+assert.deepEqual(selectMoments(game,game.moves.map(()=>({kind:'inaccuracy',loss:60})),'w'),[]);
+assert.deepEqual(selectMoments(game,game.moves.map(()=>({kind:'mistake',loss:170})),'b'),[1,3,5]);
+const long={moves:Array.from({length:8},()=>({color:'w'}))};
+assert.deepEqual(selectMoments(long,Array.from({length:8},(_,i)=>({kind:'mistake',loss:i*10})),'w'),[3,4,5,6,7]);
+const mate=continuation(game.fens[6],['h5f7']);assert.equal(mate[0].mate,true);assert.match(mate[0].caption,/Checkmate/);
+assert.equal(continuation(new Chess().fen(),['e2e5']).length,0);
+const defense=coachMoment(game,5,{pv:['g7g6','h5f3']},{kind:'blunder',title:'Allowed a forced mate'});
+assert.match(defense.text,/attacks the queen on h5/);assert.match(defense.text,/Qxf7#/);
+assert.equal(defense.steps.length,2);assert.match(defense.steps[0].caption,/attacks the queen/);
+const fallback=coachMoment(game,0,{pv:['a2a3']},{kind:'mistake',title:'A better option'});assert.match(fallback.text,/cannot confidently/);
+assert.match(takeawayFor(['checks','checks','captures']),/look at your checks/);
+assert.match(takeawayFor([]),/No major/);
+console.log('Guided review: selection, legal playback, mate, defense explanation and takeaway passed');

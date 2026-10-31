@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {parseGame} from '../dist/analysis.js';
+import {pieceSVG} from '../dist/pieces.js';
+assert.throws(()=>parseGame('é'.repeat(75001)),/150 KB/);
+assert.throws(()=>parseGame(null),/text/);
+for(const type of ['','kq','<img onerror=alert(1)>',null])assert.equal(pieceSVG(type,'w'),'');
+assert.equal(pieceSVG('k','x'),'');
+const pgn='[White "<img src=x onerror=alert(1)>"]\n\n1. e4 e5';
+assert.equal(parseGame(pgn).headers.White,'<img src=x onerror=alert(1)>');
+console.log('PASS input byte/type limits and piece-markup allowlist; hostile PGN header remains plain data');
