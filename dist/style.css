@@ -102,3 +102,21 @@ body.dark-mode{color-scheme:dark;background:#141516;--ink:#f0e7da;--muted:#bfb4a
 /* Keep navigation icons legible against dark-mode button surfaces. */
 body.studio.dark-mode .controls button,body.studio.dark-mode .controls #flip{background:#303031;color:#f0e7da;border-color:#655c50}
 body.studio.dark-mode .controls button:hover{background:#454039}
+
+/* Grade colors are paired with symbols and accessible names. */
+body{--grade-good:#326529;--grade-inaccuracy:#876007;--grade-mistake:#a74a08;--grade-blunder:#b42e31;--grade-mate:#7743af}
+body.dark-mode{--grade-good:#afd09a;--grade-inaccuracy:#edc86f;--grade-mistake:#ffad66;--grade-blunder:#ff9397;--grade-mate:#d2aeff}
+body .good{--grade-color:var(--grade-good)}
+body .inaccuracy{--grade-color:var(--grade-inaccuracy)}
+body .mistake{--grade-color:var(--grade-mistake)}
+body .blunder{--grade-color:var(--grade-blunder)}
+body .mate{--grade-color:var(--grade-mate)}
+body #moves button:is(.good,.inaccuracy,.mistake,.blunder,.mate),body .moment:is(.good,.inaccuracy,.mistake,.blunder,.mate),body .grade-key{color:var(--grade-color);border-left:3px solid var(--grade-color)}
+body .grade-key{border:0;white-space:nowrap;font-weight:650}
+body #moves button.active{outline-color:var(--grade-color,#9a6b35)}
+.square.coach-clickable{cursor:pointer}
+.square.coach-clickable:hover{box-shadow:inset 0 0 0 3px #187baf}
+.square.coach-clickable:focus-visible{outline:3px solid #055c96;outline-offset:-5px}
+.square.coach-source:after,.square.coach-target:after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;background:#29b6f655;box-shadow:inset 0 0 0 4px #0069a5}
+.square.coach-target:after{background:#29b6f688;box-shadow:inset 0 0 0 5px #0069a5}
+.square.coach-target:before{content:'◎';position:absolute;right:4px;top:0;z-index:4;font-size:25px;font-weight:800;color:#003b64;text-shadow:0 1px #fff}
