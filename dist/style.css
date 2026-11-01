@@ -43,3 +43,58 @@ body.dark-mode{color-scheme:dark;background:#141516;--ink:#f0e7da;--muted:#bfb4a
 
 /* Move-by-move review: compact scrollable scoresheet beside the persistent board. */
 #moveReview{margin-top:22px;border-top:1px solid var(--border);padding-top:12px}#moveReview h3{margin:0;font-size:15px}.move-help{font-size:11px;color:var(--muted);margin:6px 0 10px}#moves.movelist{max-height:190px;overflow-y:auto;overscroll-behavior:contain;scroll-margin:12px}#moves button{min-height:38px}#moves button.active{outline:2px solid #9a6b35;outline-offset:-2px;font-weight:800}#reviewTitle{font-size:25px}#played{font-weight:600}button:disabled{cursor:default}@media(max-width:700px){#moves.movelist{max-height:120px}#reviewTitle{font-size:21px}#moveReview{margin-top:14px}}
+
+/* Desktop study layout: matching board and review squares. */
+@media (min-width: 901px) and (min-height: 600px) {
+  body.studio { --study-size:min(calc((100vw - 96px)/2),calc(100dvh - 250px)); }
+  .studio header { height:96px;padding:0 32px;gap:24px; }
+  .studio header .brand { font-size:34px;gap:12px;letter-spacing:-1.2px; }
+  .studio header .logo-knight { width:80px;height:74px; }
+  .studio header .header-actions { gap:12px; }
+  .studio header .header-actions>button { font-size:14px;min-height:44px; }
+  .studio header #openImport { padding:12px 20px; }
+  .studio header #pgnInfo { width:36px;height:36px;min-height:36px; }
+  .studio header #themeToggle { width:48px;height:48px; }
+  .studio main { max-width:none;width:100%;margin:0;padding:16px 32px 20px;justify-content:center;align-items:center; }
+  .studio .workspace { flex:0 0 auto;width:calc(var(--study-size)*2 + 32px);grid-template-columns:repeat(2,minmax(0,1fr));gap:32px;align-items:start; }
+  .studio .board-column { --board-size:var(--study-size);display:grid;grid-template-rows:30px var(--study-size) 30px 50px;align-items:center;justify-content:stretch; }
+  .studio .board { width:var(--study-size);height:var(--study-size);border-width:9px; }
+  .studio .playerline { width:100%;min-height:0;height:30px;font-size:14px; }
+  .studio .pill { font-size:9px; }
+  .studio .coord { font-size:11px; }
+  .studio .controls { width:100%;margin:0;align-self:end;gap:8px; }
+  .studio .controls button { width:46px;min-width:46px;min-height:46px;flex-basis:46px; }
+  .studio .controls span { font-size:14px; }
+  .studio .review-column { width:var(--study-size);height:var(--study-size);margin-top:30px;border-radius:12px; }
+  .studio .widget-nav { padding:10px;border-radius:11px 11px 0 0; }
+  .studio .tabs { gap:6px; }
+  .studio .tabs button,.studio .tabs button:first-child { flex:1;min-height:44px;font-size:15px; }
+  .studio .card { padding:clamp(20px,1.6vw,32px); }
+  .studio #reviewTitle { font-size:clamp(27px,2vw,36px);margin:10px 0 12px; }
+  .studio #reviewText,.studio #played { font-size:16px;line-height:1.6; }
+  .studio .eyebrow { font-size:10px; }
+  .studio .game-meta { font-size:13px;padding-bottom:14px; }
+  .studio .coach-why { padding:18px 20px; }
+  .studio #explanation,.studio #caption { font-size:clamp(16px,1.1vw,19px);line-height:1.65; }
+  .studio #moveReview h3 { font-size:18px; }
+  .studio .move-help { font-size:12px;line-height:1.6; }
+  .studio #moves.movelist { max-height:clamp(144px,26dvh,280px);grid-template-columns:40px 1fr 1fr;gap:5px; }
+  .studio #moves button { font-size:17px;min-height:44px;padding:10px 14px; }
+  .studio .movelist span { font-size:13px; }
+  .studio .moment { font-size:16px;padding:18px 4px; }
+  .studio #reviewActionbar { padding:12px 20px; }
+  .studio .flow-actions { gap:12px; }
+  .studio .flow-actions .primary { font-size:15px;min-height:46px;padding:12px 18px; }
+  .studio .flow-actions .quiet { font-size:14px;min-height:44px; }
+  .studio .widget-foot { padding:8px 14px;gap:10px;font-size:11px; }
+  .studio .widget-foot .quiet { font-size:11px; }
+  .studio .widget-foot span:first-child { font-size:10px;letter-spacing:.3px; }
+  .studio .playback button,.studio summary { font-size:13px; }
+  .studio #reviewSettings { margin-top:20px; }
+}
+/* Keep narrower windows usable without forcing desktop-sized squares. */
+@media (min-width:701px) and (max-width:900px) {
+  .studio header .brand { font-size:23px; }
+  .studio main { padding:12px 16px; }
+  .studio .workspace { grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px; }
+}
