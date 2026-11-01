@@ -57,6 +57,17 @@ export function coachMoment(game,index,analysis,grade,viewerSide=game.moves[inde
   const idea=moveIdea(suggested);theme=idea.theme;
   if(matched){explanation=`${own?'Good choice':'A strong choice by '+actor}—${played.text} Explore this move to see one possible continuation.`;}
   else {explanation+=` Coach Lens prefers ${suggested.san} for ${actor}: ${idea.text}`;
+   const reply=game.moves[index+1];
+   if(reply?.san.endsWith('#')&&['b','r','q'].includes(reply.piece)){
+    const dx=reply.to.charCodeAt(0)-reply.from.charCodeAt(0),dy=Number(reply.to[1])-Number(reply.from[1]);
+    if(dx===0||dy===0||Math.abs(dx)===Math.abs(dy)){
+     const distance=Math.max(Math.abs(dx),Math.abs(dy));
+     for(let n=1;n<distance;n++){
+      const square=String.fromCharCode(reply.from.charCodeAt(0)+Math.sign(dx)*n)+(Number(reply.from[1])+Math.sign(dy)*n);
+      if(square===suggested.to&&!c.moves({verbose:true}).some(r=>r.from===reply.from&&r.to===reply.to))explanation+=` It also blocks the ${names[reply.piece]}’s path from ${reply.from} to ${reply.to}, preventing the immediate ${reply.san} seen in the game.`;
+     }
+    }
+   }
    if(grade?.kind==='mate')explanation+=' The analysis finds a route to checkmate with this move; the preview may show only its opening moves.';
    if(grade?.title==='Allowed a forced mate'&&game.moves[index+1]?.san.endsWith('#'))explanation+=` In the game, ${move.san} allowed ${game.moves[index+1].san} and checkmate.`;
   }

@@ -39,3 +39,5 @@ assert.equal(alt.steps[0].fen,new Chess(game.fens[5]).move('g6').after);
 const blackStart=parseGame('[SetUp "1"]\n[FEN "4k3/8/8/8/8/8/8/4K2R b K - 0 12"]\n\n12... Kd7 13. O-O *');
 assert.equal(coachMoment(blackStart,0,{pv:['e8d7']},{kind:'steady'},'w').steps[0].fen,blackStart.fens[1]);
 console.log('Every-move review: both players, perspective, mate, missing analysis and FEN start passed');
+
+assert.match(alt.text,/blocks the queen’s path from h5 to f7/);
