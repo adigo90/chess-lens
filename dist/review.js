@@ -8,8 +8,8 @@ export function selectMoments(game,grades,side){
  const priority=g=>g.kind==='mate'?10000:g.title==='Allowed a forced mate'?9000:(g.loss??0);
  return important.sort((a,b)=>priority(b.g)-priority(a.g)).slice(0,5).sort((a,b)=>a.i-b.i).map(x=>x.i);
 }
-export function continuation(fen,pv=[]){
- const c=new Chess(fen),steps=[];let balance=0;const color=c.turn();
+export function continuation(fen,pv=[],viewerSide){
+ const c=new Chess(fen),steps=[];let balance=0;const color=viewerSide||c.turn();
  for(const u of pv.slice(0,8)){
   let m;try{m=c.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u.slice(4)||undefined});}catch{break;}
   if(m.captured)balance+=(m.color===color?1:-1)*values[m.captured];
@@ -24,30 +24,48 @@ export function continuation(fen,pv=[]){
  }
  return steps;
 }
-export function coachMoment(game,index,analysis,grade){
- const move=game.moves[index],c=new Chess(move.before),steps=continuation(move.before,analysis?.pv);
- if(!steps.length)return {title:'A moment worth revisiting',text:'No playable alternative was saved for this position. Try a deeper review.',steps,theme:'threats'};
- const first=steps[0],m=c.move({from:first.from,to:first.to,promotion:analysis.pv[0].slice(4)||undefined});
- let title=grade.kind==='mate'?'You missed a checkmate opportunity':grade.title;
- let why='The advantage depends on the replies that follow. Watch this short line to compare the positions; this review cannot confidently name a specific tactic here.';
- let theme='threats';
- if(first.mate){title='You had checkmate in one move';why='This move attacks the king, and your opponent has no legal way to escape, block the attack, or capture the attacking piece.';theme='checks';}
- else {
-  const attacked=[];for(const row of c.board())for(const piece of row)if(piece&&piece.color!==m.color&&piece.type!=='p'&&c.attackers(piece.square,m.color).includes(m.to))attacked.push(piece);
-  if(attacked.length>=2){why=`Your ${names[m.piece]} attacks ${attacked.map(p=>`the ${names[p.type]} on ${p.square}`).join(' and ')} at once. This is called a fork. Watch the reply to see what can be captured.`;title='A chance to attack two pieces at once';theme='forks';}
-  else if(attacked.some(p=>p.type==='q')){why=`This attacks the queen on ${attacked.find(p=>p.type==='q').square} with your ${names[m.piece]}, giving your opponent a threat to respond to. Watch the reply to see how the queen reacts.`;theme='threats';}
-  else if(m.captured){why=`Your ${names[m.piece]} can capture the ${names[m.captured]} on ${m.to}. The reply matters: watch whether your opponent can take your piece back.`;theme='captures';}
-  else if(c.isCheck()){why='This gives check, so your opponent must deal with the attack on their king. Watch how that changes their options.';theme='checks';}
-  else if(m.flags.includes('k')||m.flags.includes('q'))why='Castling moves your king away from its starting square and brings your rook into play.';
-  else if(['n','b'].includes(m.piece)&&m.from[1]===(m.color==='w'?'1':'8'))why=`This brings your ${names[m.piece]} off the back rank and into play. The continuation shows the position Coach Lens prefers.`;
-  if(grade.kind==='mate'){title='You missed a checkmate opportunity';why+=' The analysis found a route to checkmate here; the preview may show only its opening moves.';theme='checks';}
-  if(grade.kind==='blunder'&&grade.title==='Allowed a forced mate'){title='Your king needed protection';why+=game.moves[index+1]?.san.endsWith('#')?` In your game, ${move.san} let your opponent play ${game.moves[index+1].san} and deliver checkmate.`:' Your played move allowed a mating attack in this analysis.';theme='threats';}
- }
- return {title,text:`Coach Lens suggests ${m.san}. ${why}`,steps,theme};
+function moveIdea(move){
+ const c=new Chess(move.after),actor=move.color==='w'?'White':'Black',other=move.color==='w'?'Black':'White';
+ if(c.isCheckmate())return {text:`${actor} gives checkmate: the king has no legal escape.`,theme:'checks'};
+ if(c.isDraw())return {text:'This position is a draw under the rules checked by this review.',theme:'threats'};
+ if(move.promotion)return {text:`The pawn promotes to a ${names[move.promotion]}, adding a new piece to the board.`,theme:'captures'};
+ if(move.flags.includes('k')||move.flags.includes('q'))return {text:'Castling moves the king away from its starting square and brings the rook closer to the centre.',theme:'threats'};
+ const attacked=c.board().flat().filter(p=>p&&p.color!==move.color&&p.type!=='p'&&c.attackers(p.square,move.color).includes(move.to));
+ if(attacked.length>=2)return {text:`The ${names[move.piece]} attacks ${attacked.map(p=>`the ${names[p.type]} on ${p.square}`).join(' and ')} at once—a fork. Whether it wins a piece depends on the reply.`,theme:'forks'};
+ if(move.captured)return {text:`The ${names[move.piece]} captures the ${names[move.captured]} on ${move.to}.${c.isCheck()?' It also gives check.':' Check the continuation to see whether it can be recaptured.'}`,theme:'captures'};
+ if(c.isCheck())return {text:`This gives check, so ${other} must respond to the attack on the king.`,theme:'checks'};
+ if(attacked.some(p=>p.type==='q'))return {text:`The ${names[move.piece]} attacks the queen on ${attacked.find(p=>p.type==='q').square}, creating a threat to answer.`,theme:'threats'};
+ if(['n','b'].includes(move.piece)&&move.from[1]===(move.color==='w'?'1':'8'))return {text:`The ${names[move.piece]} develops from the back rank, bringing another piece into play.`,theme:'development'};
+ if(move.piece==='p'&&['d4','e4','d5','e5'].includes(move.to))return {text:`The pawn takes space in the centre on ${move.to}, influencing the nearby squares.`,theme:'centre'};
+ return {text:`The ${names[move.piece]} moves from ${move.from} to ${move.to}. The benefit depends on the replies; Coach Lens cannot confidently name a specific tactic here.`,theme:'threats'};
+}
+export function coachMoment(game,index,analysis,grade,viewerSide=game.moves[index].color){
+ const move=game.moves[index],actor=move.color==='w'?'White':'Black',own=move.color===viewerSide;
+ const played=moveIdea(move),steps=continuation(move.before,analysis?.pv,viewerSide);
+ const matched=analysis?.pv?.[0]===move.from+move.to+(move.promotion||'');
+ const mate=new Chess(move.after).isCheckmate();
+ const titles={good:'Strong move',steady:'Steady move',inaccuracy:'A small improvement was available',mistake:'A better option was available',blunder:'A costly move',mate:'Missed a checkmate opportunity'};
+ const title=mate?'Checkmate':matched?'Strong move':grade?titles[grade.kind]||'Position reviewed':'Not analyzed yet';
+ const assessments={good:'This matches Coach Lens’s first choice at this depth.',steady:'The analysis sees little change in the position.',inaccuracy:'A small advantage was lost.',mistake:'This gave the other player a better chance.',blunder:'This made the position much harder to play.',mate:'The analysis found a forced mate before this move, but no longer finds it afterward.'};
+ let assessment=grade?(assessments[grade.kind]||''):'Run analysis to get an assessment for this move.';
+ if(mate)assessment='The king is attacked and has no legal escape.';
+ else if(grade?.title==='Allowed a forced mate')assessment=`This allowed a forced checkmate for ${own?'your opponent':'you'} at this search depth.`;
+ else if(analysis?.type==='mate'&&grade?.kind==='steady')assessment='This is a forced-mate position; the exact route may change with deeper analysis.';
+ let explanation=played.text,theme=played.theme;
+ if(!mate&&steps.length){
+  const c=new Chess(move.before),u=analysis.pv[0];const suggested=c.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u.slice(4)||undefined});
+  const idea=moveIdea(suggested);theme=idea.theme;
+  if(matched){explanation=`${own?'Good choice':'A strong choice by '+actor}—${played.text} Explore this move to see one possible continuation.`;}
+  else {explanation+=` Coach Lens prefers ${suggested.san} for ${actor}: ${idea.text}`;
+   if(grade?.kind==='mate')explanation+=' The analysis finds a route to checkmate with this move; the preview may show only its opening moves.';
+   if(grade?.title==='Allowed a forced mate'&&game.moves[index+1]?.san.endsWith('#'))explanation+=` In the game, ${move.san} allowed ${game.moves[index+1].san} and checkmate.`;
+  }
+ }else if(!mate&&grade)explanation+=' No playable continuation was saved. Try a deeper analysis for a suggested line.';
+ return {title,text:explanation,assessment,matched,steps:mate?[]:steps,theme};
 }
 export function takeawayFor(themes=[]){
  if(!themes.length)return 'Before committing to a move, check your opponent’s checks, captures, and threats. No major missed opportunities were flagged at this search depth.';
  const count={};for(const t of themes)count[t]=(count[t]||0)+1;
  const theme=Object.keys(count).sort((a,b)=>count[b]-count[a])[0];
- return {checks:'Before taking a piece, look at your checks. One forcing move can change the whole position.',captures:'Before moving, look for pieces you can capture—and check whether your opponent can take you back.',forks:'Look for a move that attacks two pieces at once, especially a check that also attacks another piece.',threats:'After choosing your move, pause and look for your opponent’s strongest check or capture.'}[theme];
+ return {checks:'Before taking a piece, look at your checks. One forcing move can change the whole position.',captures:'Before moving, look for pieces you can capture—and check whether your opponent can take you back.',forks:'Look for a move that attacks two pieces at once, especially a check that also attacks another piece.',development:'Bring your knights and bishops into play, and check what each move leaves undefended.',centre:'Look for safe ways to influence the centre before starting an attack.',threats:'After choosing your move, pause and look for your opponent’s strongest check or capture.'}[theme];
 }

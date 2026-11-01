@@ -1,3 +1,9 @@
+## 0.9.0 — Every-move Game Review
+
+- Review every move by either player with synchronized board, assessment and Coach Lens explanation.
+- Move list lives in Game Review; Moments jump directly to that move. Removed Full game tab.
+- Alternatives start before the selected move; matching moves reinforce good decisions.
+
 # 0.6.0
 
 - Larger board; review utilities moved alongside it.

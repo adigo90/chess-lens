@@ -23,11 +23,14 @@ The build command validates the ready-to-serve `dist/` directory. Dependencies a
 
 ## Using the app
 
-1. Import one standard-chess PGN by pasting it or choosing a file; alternatively use the labelled example.
-2. Choose your color and Quick or Deeper review.
-3. Analysis starts automatically after import. Switch between **Game, Lesson, Moments and Moves** using tabs or the panel arrows.
-4. Compare your move with the engine suggestion and replay its continuation.
-5. Try a practice move on the board, request a hint, or reveal the answer.
+1. Import one standard-chess PGN by pasting it or selecting a file. Analysis starts automatically.
+2. Choose your player if your saved username does not match the PGN.
+3. Start Game Review. Every move from both players appears in its move list. Click a move or use the board arrows / keyboard arrows to navigate.
+4. Read the assessment and Coach Lens explanation. The board shows the position after the selected move.
+5. Choose **Show me what if** for an alternative, or **Explore this move** when the played move matches the preferred line. The demonstration starts from before that move. **Back to the game** restores the actual position; Next move advances the game.
+6. Use **Moments** as shortcuts to up to five important missed chances. Finish at the last move for a takeaway.
+
+Review settings offer Quick / Deeper analysis and a manual side override. The optional first-review guide and dark mode preferences are stored locally.
 
 ## Features
 
@@ -43,7 +46,7 @@ The build command validates the ready-to-serve `dist/` directory. Dependencies a
 
 PGNs and analysis remain in tab memory and are not uploaded by this app. Reloading clears them. The host will still receive ordinary HTTP requests for app assets and may maintain infrastructure logs. No analytics, cloud AI or API credentials are included.
 
-The 0.2s/0.8s searches are quick estimates, not exhaustive analysis. Centipawn-loss thresholds are app heuristics (50/150/300 for inaccuracy/mistake/blunder); these are not Chess.com or Lichess accuracy ratings. Explanations are simple verified templates, not complete tactical motif detection. Practice currently compares against one engine suggestion and supports choosing a promotion piece. Equivalent good alternatives are not yet evaluated. Repetition history is not passed into standalone FEN analysis. No persistent game history, user accounts or automatic Chess.com sync yet.
+The 0.2s/0.8s searches are quick estimates, not exhaustive analysis. Centipawn-loss thresholds are app heuristics (50/150/300 for inaccuracy/mistake/blunder); these are not Chess.com or Lichess accuracy ratings. Explanations are simple verified templates, not complete tactical motif detection. The displayed continuation is one possible line, not a guarantee of the opponent’s reply. Alternative user-entered moves are not evaluated. Repetition history is not passed into standalone FEN analysis. No persistent game history, user accounts or automatic Chess.com sync yet.
 
 ## Project layout
 
@@ -65,18 +68,9 @@ The 0.2s/0.8s searches are quick estimates, not exhaustive analysis. Centipawn-l
 
 Deploy `dist/` to a static host with JavaScript and WASM MIME support. No server functions or isolation headers are required for this single-thread engine. Paths are relative so a subdirectory deployment can work. Vercel configuration is included. For Cloudflare Pages, use `npm run build` with output directory `dist`. Read [the hosting guide](docs/HOSTING.md) before choosing access settings: a private GitHub repository does not automatically make a deployed website private.
 
-## GitHub handoff
+## Hosting
 
-GitHub authentication was unavailable when this package was prepared. It has **not** been pushed to a user GitHub repository. A CI workflow is included to run tests and validate assets on push/PR; it does not deploy anything. The exported source package excludes `.git`, `.openai`, node_modules and hosting identity.
-
-Once GitHub is connected, create a private repository named `chess-lens` in the intended account and push this folder. Do not make the repository public by default. If doing it manually with an authenticated GitHub CLI from a fresh unzipped folder:
-
-```sh
-git init -b main
-git add .
-git commit -m "Initial Chess Lens application"
-gh repo create chess-lens --private --source=. --remote=origin --push
-```
+Source: https://github.com/adigo90/chess-lens . Production: https://chess-lens-five.vercel.app . Vercel deploys the main branch using the included configuration.
 
 ## Credits and licensing
 
@@ -87,43 +81,15 @@ gh repo create chess-lens --private --source=. --remote=origin --push
 
 Independent project, not affiliated with Chess.com or Lichess.
 
-## Validation status
+## Current experience (0.9)
 
-The 12 core regression tests pass. Syntax checks pass for the app and localhost server. Earlier v0.2 browser checks covered desktop and phone layouts, actual Stockfish analysis and a correct practice move. The v0.4 desktop and 390×844 phone-sized layouts were visually checked in the browser. Pasted PGN automatic analysis, completion guide, preference persistence after reload, guide suppression and cancellation were verified. The file-picker automation stalled, so the direct file-selection flow remains unverified in the browser. Actual iOS Safari device testing remains outstanding.
+Every move is reviewable, including opponent moves, small inaccuracies, strong moves and the final checkmate. Moments are optional shortcuts rather than the main review sequence. The Full game tab has been removed; its scoresheet lives in Game Review. The board and action bar remain visible while coaching content scrolls.
 
-## Automatic review (v0.4)
+Coach Lens uses deterministic, position-grounded observations of checks, immediate mates, captures, forks, queen attacks, development, central pawn moves and castling. It does not expose an engine’s internal reasoning. Subtle benefits receive an explicit fallback. Continuations contain up to eight legal half-moves. Good moves receive reinforcement rather than a manufactured correction.
 
-Paste PGN and choose **Import & analyze**, or select a PGN file to import and start immediately. Analysis remains local. Change your side at any time; use Game → Review → Deeper and re-analyze for more search time.
+## Validation
 
-A successful review opens an **Analysis complete** guide. **Don’t show again** saves only a display preference in this browser; imported games are still cleared on reload. **How to use** always reopens the guide and lets you restore automatic guides. If storage is unavailable, the preference applies for the current page session.
-
-Board pieces use Colin M. L. Burnett’s classic SVG set (GPL-2.0-or-later); see the asset licenses and Credits page.
-
-## Position puzzles (v0.5)
-
-Click a piece whose turn it is in any non-terminal game position to try the next move. Dots show legal destinations; blue marks the saved engine suggestion when enabled. Uncheck Show engine suggestion to hide it. A legal trial move appears on the board. Try again resets the position; Back to game restores the replay. The original game is never changed. Suggestions use the saved analysis, not a fresh search of alternative moves. Suggested continuations use their remaining saved engine line.
-
-Navigation controls have full rectangular hit areas and dedicated space above the footer. Beginner explanations no longer use pawn-equivalent scores.
-
-Verified v0.5 in browser: real engine analysis; hint destination; hint hiding; trial e2–e4 displayed and matched; reset and return to game; forward and back using button-corner clicks; 390×844 responsive layout. Core regression tests and release checks pass.
-
-## Board-first layout (v0.6)
-
-The board uses more of the available screen height. Hint and practice controls live in the review panel; the study-companion banner has been removed. Navigation uses SVG icons with full button hit areas. The first tab is now Game Review.
-
-My Chess.com username is saved locally and used to match PGN White/Black headers, ignoring letter case and surrounding spaces. This personal build defaults to azg901. A match sets both the review side and board orientation before automatic analysis. An unmatched username asks the learner to choose a side; manual selection remains available. A PGN alone cannot identify its importer.
-
-Verified v0.6: desktop and 390×844 phone layout; imported azg901 as Black automatically selects Black and flips the board; completed local analysis; 14 core checks including identity matching.
-
-## Coach Lens and Focus mode
-Coach Lens explanations describe verified move effects and the saved continuation; they do not infer unproven future checkmates or claim to expose engine reasoning. Focus toggles a dark board-and-review workspace; Escape exits. The centered knight logo replaces CL. PGN help appears on hover, focus or tap.
-
-## Current experience (0.8)
-Import PGN → automatic local analysis → choose your side if unknown → start review → show a captioned alternative → next moment → one takeaway. Moments and Full game remain secondary navigation. The action bar stays visible while explanations scroll. The sample reviews Black's missed defense.
-
-Coach Lens explanations are deterministic, position-grounded observations (checks, immediate mates, captures, forks, queen attacks, development and castling), not an LLM coach. Subtle benefits receive an explicit fallback rather than a made-up tactical claim. Saved PVs provide up to eight legal half-moves; a line is one possible continuation and can end before a deeper forced mate. Quick analysis is approximate. Reviews select at most five mistakes/blunders/missed mates; minor inaccuracies are omitted.
-
-Dark mode uses the system preference initially and remembers an explicit toggle. Guide dismissal and username are saved locally; game content is not persisted. GitHub and Vercel migration is the next step; this release remains on the existing private Sites host.
+Core parsing/classification, guided-review and security tests run with `npm test`. Review tests cover every sample half-move, opponent perspective, final checkmate, missing analysis, legal alternatives from the pre-move position and custom FEN starts. `npm run build` verifies the release assets. Live browser verification is reported separately from these automated checks.
 
 ## Release security and licenses
 See [SECURITY.md](SECURITY.md), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [release checklist](docs/RELEASE_CHECKLIST.md). Vercel headers are configured but require live verification after deployment. Original application licensing remains a decision for the owner; third-party notices are preserved.
